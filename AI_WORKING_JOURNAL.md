@@ -17,3 +17,10 @@ AI recommendation/accepted scope: Architecture/bootstrap, domain, API/reporting,
 Challenge: Docker CLI presence is not proof of engine access. Docker/PostgreSQL checks must be reported independently.
 Manual human changes: None observed.
 Result: Architecture written before code implementation. Maven 3.9.11 downloaded outside repository. Compatibility checked against official Spring/springdoc documentation. Implementation is now proceeding.
+
+## 3 — 2026-10-07: Domain and API milestones
+Task: Implement explicit state transitions, persistence, commands and reporting.
+AI recommendation: JPA aggregate operations, expected-version checks, typed command records, centralized error DTOs; parameterized/constant SQL aggregates rather than loading all claims.
+Accepted: Within authorized design. No new human feedback/manual changes observed.
+Challenged by evidence: Maven wrapper generation through PowerShell truncated the unquoted version argument to `3`; wrapper downloaded a nonexistent distribution. Corrected distributionUrl explicitly to 3.9.11. Initial domain compilation passed using temporary Maven; API/reporting compilation also passed.
+Result: Architecture/bootstrap commit 882cc43; domain/persistence commit 61c885d. Domain creation, assignment, information flow, approval/settlement and rejection are implemented. No runtime verification claimed yet.
