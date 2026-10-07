@@ -65,3 +65,10 @@ Accepted: User requested this presentation change; implementation retains setup 
 Challenged: Do not imply a live CI badge or successful Docker/PostgreSQL validation. Local test counts remain 23 passed/one skipped, with blocked checks visible. An initial shell rewrite was blocked by execution policy; used explicit file patches instead. Failed patch attempts changed no files.
 Validation: Checked Markdown fence and details-tag balance, document links and Git whitespace diff. Documentation-only change; application tests were not rerun. Badges are static snapshots served by Shields.io, not live build automation.
 Result: README reorganized for GitHub-style rendering and recorded as a documentation checkpoint.
+
+## 9 — 2026-10-07: Clarify Docker prerequisites for Windows
+Prompt summary: User asked why quick start requires Linux containers, then requested the wording be fixed, committed and pushed.
+AI recommendation/accepted change: Explicitly list Windows Docker Desktop with WSL2, macOS Docker Desktop and Linux Docker Engine. Explain that Linux-container mode describes the images, not a requirement for a Linux host.
+Challenged: Previous shorthand could wrongly suggest Windows users cannot run the project. No manual human changes observed.
+Validation: Reviewed both prerequisite sections and checked Git whitespace diff. Documentation-only change; no application tests rerun and no new Docker runtime validation claimed.
+Result: Updated README and journal; user authorized committing and pushing this correction to origin/master.

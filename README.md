@@ -36,7 +36,7 @@ A small modular monolith replacing shared inboxes and spreadsheets with explicit
 
 ## Quick start
 
-**Prerequisites:** Docker with Linux containers, Compose v2+, working engine access and free ports **8080 / 5432 / 9092**. The first build requires internet access.
+**Prerequisites:** Docker Desktop on Windows with the **WSL2 backend**, Docker Desktop on macOS, or Docker Engine on Linux; Compose v2+; working engine access; and free ports **8080 / 5432 / 9092**. The first build requires internet access.
 
 ```powershell
 Copy-Item .env.example .env
@@ -71,7 +71,8 @@ Springdoc compatibility follows the [official matrix](https://springdoc.org/v2/)
 
 - JDK **17** and `JAVA_HOME` pointing to it; no global Maven installation required.
 - Internet on the first build for Maven/dependencies.
-- Docker Engine/Desktop with **Linux containers**, working engine access and Docker Compose v2 or later for the full stack.
+- Docker Desktop on **Windows with the WSL2 backend**, Docker Desktop on **macOS**, or Docker Engine on **Linux**, with working engine access and Docker Compose v2 or later.
+- On Windows, Docker Desktop must use **Linux-container mode** because the PostgreSQL, Kafka and Java images are Linux-based. The host operating system can still be Windows.
 - Available localhost ports 8080, 5432 and 9092.
 
 ### Windows PowerShell
