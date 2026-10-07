@@ -3,6 +3,7 @@ package com.chubb.claims.claim;
 import com.chubb.claims.common.NotFoundException;
 import com.chubb.claims.workflow.ClaimHistory;
 import com.chubb.claims.workflow.ClaimHistoryRepository;
+import com.chubb.claims.event.EventRecorder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.*;
@@ -17,8 +18,9 @@ public class ClaimService {
     private final ClaimRepository claims;
     private final ClaimHistoryRepository history;
     private final Clock clock;
-    public ClaimService(ClaimRepository claims, ClaimHistoryRepository history, Clock clock) {
-        this.claims = claims; this.history = history; this.clock = clock;
+    private final EventRecorder events;
+    public ClaimService(ClaimRepository claims, ClaimHistoryRepository history, Clock clock, EventRecorder events) {
+        this.claims = claims; this.history = history; this.clock = clock; this.events = events;
     }
     public ClaimDtos.Detail create(ClaimDtos.Create input) {
         Claim c = Claim.submit(input.claimType(), input.market(), input.claimantName(), input.incidentDescription(),
@@ -30,7 +32,7 @@ public class ClaimService {
         command.accept(c); claims.flush(); record(c, from, operation); return ClaimDtos.Detail.from(c);
     }
     private void record(Claim c, ClaimStatus from, String operation) {
-        history.save(new ClaimHistory(UUID.randomUUID(), c.getId(), operation, from, c.getStatus(), clock.instant(), c.getVersion()));
+        events.record(c, from, operation, clock.instant());
     }
     @Transactional(readOnly = true)
     public ClaimDtos.Detail get(UUID id) { return ClaimDtos.Detail.from(find(id)); }

@@ -24,3 +24,10 @@ AI recommendation: JPA aggregate operations, expected-version checks, typed comm
 Accepted: Within authorized design. No new human feedback/manual changes observed.
 Challenged by evidence: Maven wrapper generation through PowerShell truncated the unquoted version argument to `3`; wrapper downloaded a nonexistent distribution. Corrected distributionUrl explicitly to 3.9.11. Initial domain compilation passed using temporary Maven; API/reporting compilation also passed.
 Result: Architecture/bootstrap commit 882cc43; domain/persistence commit 61c885d. Domain creation, assignment, information flow, approval/settlement and rejection are implemented. No runtime verification claimed yet.
+
+## 4 — 2026-10-07: Durable events and first test execution
+Task: Ensure database/Kafka consistency and prove core behavior.
+AI recommendation: Persist history/outbox in command transaction, wait for broker acknowledgement before marking publication, leave failed records pending. Keep publisher single-instance and document duplicate/retry limits.
+Challenge/refinement: No consumer was invented to claim integration functionality; event payload omits claimant name and free-text evidence. Stop a failed batch rather than attempt every row against an unavailable broker.
+Accepted: Authorized MVP implementation; no manual human edits observed.
+Validation: Maven Wrapper compilation passed after URL correction. First `mvnw.cmd test` on installed Java 21 passed 18 tests with zero failures/errors. Domain rules, MockMvc APIs, H2-backed application flow/exposure/workload, and Mockito publisher success/failure tests passed. H2 is not PostgreSQL; mocked acknowledgement is not real Kafka delivery. Downloaded Java 17 outside repository for exact runtime validation. Docker engine still reports permission denied.
