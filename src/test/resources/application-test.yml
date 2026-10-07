@@ -9,3 +9,7 @@ spring:
 claims:
   events:
     enabled: false
+logging:
+  level:
+    org.apache.kafka: WARN
+    kafka: WARN

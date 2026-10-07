@@ -28,7 +28,7 @@ chmod +x mvnw
 ./mvnw test
 ```
 
-The default suite runs domain, database-backed H2 application/API, transaction/concurrency, real HTTP smoke and mocked Kafka publisher tests. H2 is **test-only**, PostgreSQL mode; it is not proof of PostgreSQL compatibility. The explicit PostgreSQL/Testcontainers test requires Docker and fails if the engine is unavailable:
+The default suite runs domain, database-backed H2 application/API, transaction/concurrency, real HTTP smoke, mocked publisher failure-path tests and an **embedded Kafka KRaft integration test**. The broker integration needs no Docker: it verifies committed outbox publication, actual message consumption and the published marker. It does not validate the Compose broker configuration. H2 is **test-only**, PostgreSQL mode; it is not proof of PostgreSQL compatibility. The explicit PostgreSQL/Testcontainers test requires Docker and fails if the engine is unavailable:
 
 ```powershell
 .\mvnw.cmd "-DpostgresIT=true" "-Dtest=PostgresIntegrationTest" test
@@ -150,9 +150,9 @@ This is a local assessment with no authentication; production needs OAuth2/OIDC/
 
 ## Validation record
 
-`mvnw.cmd clean verify` passed on Java **17.0.20.1**: **22 tests passed**, zero failures/errors, one explicit PostgreSQL test skipped. The executable JAR was packaged. The standalone application also started using test-only H2 configuration on port 18080; the PowerShell smoke script completed all seven lifecycle commands, history, exposure and workload checks. Health/OpenAPI/Swagger passed in the real HTTP test.
+The latest `mvnw.cmd clean verify` passed on Java **17.0.20.1** with **23 passing tests**, zero failures/errors and one explicit PostgreSQL test skipped. The executable JAR was packaged. The standalone application also started using test-only H2 configuration on port 18080; the PowerShell smoke script completed all seven lifecycle commands, history, exposure and workload checks. Health/OpenAPI/Swagger passed in the real HTTP test. The included Kafka integration test passed against a real embedded KRaft broker, verifying consumed event contents, privacy boundaries and the durable published marker.
 
-`docker compose config --quiet` passed. `docker compose up --build -d` could not start because access to the Docker engine named pipe was denied. Explicitly enabling the PostgreSQL/Testcontainers test also failed because no usable Docker environment was available. **PostgreSQL runtime, container image build and actual Kafka delivery remain unverified.** A Compose configuration parse is not container startup validation. See `AI_WORKING_JOURNAL.md` for the full evidence and corrections.
+`docker compose config --quiet` passed. `docker compose up --build -d` could not start because access to the Docker engine named pipe was denied. Explicitly enabling the PostgreSQL/Testcontainers test also failed because no usable Docker environment was available. **PostgreSQL runtime, container image build and publication to the Compose Kafka broker remain unverified.** A Compose configuration parse is not container startup validation. See `AI_WORKING_JOURNAL.md` for the full evidence and corrections.
 
 ## Production evolution
 
