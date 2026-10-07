@@ -1,10 +1,71 @@
-# Chubb APAC claims backend assessment
+<div align="center">
 
-A small modular monolith replacing shared inbox/spreadsheet claim handling with explicit, traceable workflows. Claimants submit, track and answer information requests; officers pick up, review, approve/settle or reject claims; managers retrieve workload and outstanding liability. Frontend is out of scope.
+# APAC Claims Backend
+
+**Motor & property claims · Explicit workflows · Traceable decisions**
+
+A modular Java backend assessment for **Chubb APAC**.
+
+![Java](https://img.shields.io/badge/Java-17-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5.7-6DB33F?style=flat-square&logo=springboot&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![Kafka](https://img.shields.io/badge/Apache_Kafka-KRaft-231F20?style=flat-square&logo=apachekafka&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)
+
+![Local build](https://img.shields.io/badge/Local_Java_17_build-passed-2EA44F?style=flat-square)
+![Local tests](https://img.shields.io/badge/Local_tests-23_passed-2EA44F?style=flat-square)
+![PostgreSQL test](https://img.shields.io/badge/PostgreSQL_test-1_skipped-D29922?style=flat-square)
+
+[Quick start](#quick-start) · [Build & test](#prerequisites-and-build) · [API guide](#api-usage) · [Validation](#validation-record) · [Architecture](ARCHITECTURE.md) · [AI journal](AI_WORKING_JOURNAL.md)
+
+</div>
+
+---
+
+## What this solves
+
+A small modular monolith replacing shared inboxes and spreadsheets with explicit, traceable claim workflows. Frontend is out of scope.
+
+| Who | What they can do |
+| :--- | :--- |
+| **Claimants** | Submit incidents, track claims, answer information requests and retrieve decisions |
+| **Claims officers** | Pick up, review, request information, approve, settle or reject claims |
+| **Managers** | View team workload, decision counts, completion time and outstanding exposure |
+
+> **Validation snapshot:** badges reflect recorded local results, not live CI status. Java 17 and embedded Kafka checks passed; full Docker/PostgreSQL startup is blocked by local engine permissions. [See validation details.](#validation-record)
+
+## Quick start
+
+**Prerequisites:** Docker with Linux containers, Compose v2+, working engine access and free ports **8080 / 5432 / 9092**. The first build requires internet access.
+
+```powershell
+Copy-Item .env.example .env
+# Edit .env and choose a local DB_PASSWORD
+docker compose up --build
+```
+
+On Linux/macOS, replace the first command with `cp .env.example .env`.
+
+| Explore | Local URL |
+| :--- | :--- |
+| **Swagger UI** | [Open interactive API docs](http://localhost:8080/swagger-ui/index.html) |
+| **Health** | [Check application health](http://localhost:8080/actuator/health) |
+| **OpenAPI** | [View the API specification](http://localhost:8080/v3/api-docs) |
+
+Run the complete demo flow with `.\scripts\smoke.ps1`. [More startup options ↓](#run-the-complete-local-stack)
 
 ## Stack
 
-Java 17, Spring Boot 3.5.7, Maven 3.9.11 Wrapper, Spring Web/Validation/Data JPA, PostgreSQL 16, Flyway, Spring Kafka, OpenAPI/Swagger, Actuator, JUnit 5/Mockito, Docker Compose. Springdoc 2.8.x is compatible with Boot 3.5.x ([official matrix](https://springdoc.org/v2/)). Kafka uses the [official Apache JVM image](https://kafka.apache.org/39/getting-started/docker/).
+| Layer | Technology |
+| :--- | :--- |
+| **Runtime & build** | Java 17 · Spring Boot 3.5.7 · Maven 3.9.11 Wrapper |
+| **HTTP & contracts** | Spring Web · Bean Validation · OpenAPI / Swagger |
+| **Persistence** | Spring Data JPA · PostgreSQL 16 · Flyway |
+| **Events** | Apache Kafka KRaft · Spring Kafka · Transactional outbox |
+| **Verification** | JUnit 5 · Mockito · H2 · Testcontainers · Embedded Kafka |
+| **Operations** | Docker Compose · Actuator · Correlation IDs |
+
+Springdoc compatibility follows the [official matrix](https://springdoc.org/v2/); Kafka uses the [official Apache JVM image](https://kafka.apache.org/39/getting-started/docker/).
 
 ## Prerequisites and build
 
@@ -13,14 +74,15 @@ Java 17, Spring Boot 3.5.7, Maven 3.9.11 Wrapper, Spring Web/Validation/Data JPA
 - Docker Engine/Desktop with **Linux containers**, working engine access and Docker Compose v2 or later for the full stack.
 - Available localhost ports 8080, 5432 and 9092.
 
-Windows PowerShell:
+### Windows PowerShell
 
 ```powershell
 .\mvnw.cmd clean verify
 .\mvnw.cmd test
 ```
 
-Linux/macOS:
+<details>
+<summary><strong>Linux / macOS build commands</strong></summary>
 
 ```bash
 chmod +x mvnw
@@ -28,7 +90,16 @@ chmod +x mvnw
 ./mvnw test
 ```
 
-The default suite runs domain, database-backed H2 application/API, transaction/concurrency, real HTTP smoke, mocked publisher failure-path tests and an **embedded Kafka KRaft integration test**. The broker integration needs no Docker: it verifies committed outbox publication, actual message consumption and the published marker. It does not validate the Compose broker configuration. H2 is **test-only**, PostgreSQL mode; it is not proof of PostgreSQL compatibility. The explicit PostgreSQL/Testcontainers test requires Docker and fails if the engine is unavailable:
+</details>
+
+The default suite covers domain rules, H2-backed application/API flows, rollback, concurrent pickup, real HTTP checks and publisher failure paths. An **embedded Kafka KRaft integration test** verifies actual publication, consumption and the durable published marker without Docker.
+
+H2 is **test-only**; it does not prove PostgreSQL compatibility. The embedded broker does not validate the Compose configuration.
+
+<details>
+<summary><strong>PostgreSQL integration test — requires Docker</strong></summary>
+
+The explicit PostgreSQL/Testcontainers test fails if the engine is unavailable:
 
 ```powershell
 .\mvnw.cmd "-DpostgresIT=true" "-Dtest=PostgresIntegrationTest" test
@@ -36,7 +107,12 @@ The default suite runs domain, database-backed H2 application/API, transaction/c
 
 For Bash, use `./mvnw -DpostgresIT=true -Dtest=PostgresIntegrationTest test`. The PostgreSQL test is deliberately skipped in the default suite and reported as such.
 
+</details>
+
 ## Run the complete local stack
+
+<details>
+<summary><strong>Startup, logs, shutdown and persistence details</strong></summary>
 
 First copy the credential template and choose a local password (the `.env` file is Git-ignored):
 
@@ -59,7 +135,12 @@ docker compose down
 
 `docker compose down` preserves the database. Changing the password after initial database creation also requires changing the stored PostgreSQL user's password; modifying `.env` alone does not do that.
 
+</details>
+
 ## Run the JVM application against local dependencies
+
+<details>
+<summary><strong>JVM commands and environment configuration</strong></summary>
 
 ```powershell
 docker compose up -d postgres kafka kafka-init
@@ -70,6 +151,26 @@ $env:DB_PASSWORD = '<same value as .env>'
 Alternatively run `java -jar target/claims-0.0.1-SNAPSHOT.jar` after packaging. Bash: `DB_PASSWORD='<local password>' ./mvnw spring-boot:run`. Default dependencies are `localhost:5432` and `localhost:9092`; the Compose application uses internal service addresses. If using a separately provisioned broker, create `claims.lifecycle.v1` explicitly (3 partitions, appropriate replication for that environment).
 
 Configuration: `DB_URL`, `DB_USER`, required `DB_PASSWORD`, `KAFKA_BOOTSTRAP_SERVERS`, `CLAIMS_TOPIC`, `EVENTS_ENABLED`. Set `EVENTS_ENABLED=false` only when deliberately testing without publication; outbox rows remain durable/pending.
+
+</details>
+
+## Claim lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> SUBMITTED
+    SUBMITTED --> ASSIGNED: Pick up
+    ASSIGNED --> UNDER_REVIEW: Start review
+    UNDER_REVIEW --> INFORMATION_REQUIRED: Request information
+    INFORMATION_REQUIRED --> UNDER_REVIEW: Provide response
+    UNDER_REVIEW --> APPROVED: Assess / approve
+    APPROVED --> SETTLED: Record settlement
+    UNDER_REVIEW --> REJECTED: Reject with reason
+    SETTLED --> [*]
+    REJECTED --> [*]
+```
+
+**Intent-based commands** enforce these transitions. Every mutation requires the latest `expectedVersion`; invalid transitions and stale updates return **409 Conflict**.
 
 ## API usage
 
@@ -82,6 +183,9 @@ curl -i -X POST http://localhost:8080/api/claims \
 ```
 
 Returns **201** with `Location`, claim ID/number, `SUBMITTED` status and version `0`. Substitute its ID below. Every mutation requires the current `expectedVersion`; use the returned version for the next command.
+
+<details>
+<summary><strong>Assign, review and retrieve claims</strong></summary>
 
 ```bash
 curl http://localhost:8080/api/claims/CLAIM_ID
@@ -98,6 +202,8 @@ curl http://localhost:8080/api/exposure
 curl http://localhost:8080/api/workload
 ```
 
+</details>
+
 Complete create → assign → review → request/answer information → approve → settle demonstration:
 
 ```powershell
@@ -106,9 +212,17 @@ Complete create → assign → review → request/answer information → approve
 
 The script creates a new demo claim on each invocation. It verifies health, settlement and seven history entries, then retrieves operational views. Inspect Kafka events independently:
 
+<details>
+<summary><strong>Inspect lifecycle events in Kafka</strong></summary>
+
 ```powershell
 docker compose exec kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:19092 --topic claims.lifecycle.v1 --from-beginning --timeout-ms 10000
 ```
+
+</details>
+
+<details>
+<summary><strong>Complete endpoint reference and HTTP responses</strong></summary>
 
 | Endpoint | Contract |
 |---|---|
@@ -129,7 +243,12 @@ docker compose exec kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-s
 
 Commands return **200** updated detail; malformed/invalid input **400**, missing claim **404**, invalid transition/stale version **409**. Errors consistently contain timestamp, status, code, safe message, correlationId and fieldErrors. Error responses do not echo supplied values. Request correlation IDs accept only bounded alphanumeric/underscore/hyphen strings; otherwise one is generated.
 
+</details>
+
 ## Business assumptions
+
+<details>
+<summary><strong>Markets, currency, decisions and operational metrics</strong></summary>
 
 - MOTOR and PROPERTY; provisional markets **AU, NZ, SG, HK, MY, TH**. This is an assessment assumption, not confirmed Chubb scope.
 - All amounts already normalized to **USD** by the caller. Nonnegative, at most two fractional digits. No FX conversion and no local-currency aggregation.
@@ -140,7 +259,12 @@ Commands return **200** updated detail; malformed/invalid input **400**, missing
 - Workload is outstanding work. Performance is lifetime settled/rejected count and average report-to-terminal elapsed seconds, not officer productivity or SLA analytics. With no terminal claims, average is null.
 - Incident dates use the domain's UTC date; application timestamps use UTC.
 
+</details>
+
 ## Consistency and known limitations
+
+<details>
+<summary><strong>Delivery guarantees, publisher limits and production security</strong></summary>
 
 Claim changes, lifecycle history and outbox inserts share a database transaction. Publication is retried asynchronously and waits for Kafka acknowledgement. A crash between acknowledgement and commit can duplicate an event; consumers must deduplicate `eventId` and handle `aggregateVersion`. Kafka producer idempotence is not end-to-end exactly once. Events intentionally omit claimant names/narratives and evidence.
 
@@ -148,9 +272,22 @@ The publisher assumes **one application instance**, holds a bounded batch transa
 
 This is a local assessment with no authentication; production needs OAuth2/OIDC/JWT, claimant ownership and officer/manager role checks. There are no attachments, policy adjudication, payment integration, notifications or UI. The single broker and plaintext listeners are local configuration; production needs replication, TLS/SASL, secrets management and broker operations. History traces state/operation/version but does not establish authenticated actor identity. Claims containing personal information require production retention/access controls.
 
+</details>
+
 ## Validation record
 
-The latest `mvnw.cmd clean verify` passed on Java **17.0.20.1** with **23 passing tests**, zero failures/errors and one explicit PostgreSQL test skipped. The executable JAR was packaged. The standalone application also started using test-only H2 configuration on port 18080; the PowerShell smoke script completed all seven lifecycle commands, history, exposure and workload checks. Health/OpenAPI/Swagger passed in the real HTTP test. The included Kafka integration test passed against a real embedded KRaft broker, verifying consumed event contents, privacy boundaries and the durable published marker.
+**Recorded local results · Java 17.0.20.1 · `mvnw.cmd clean verify`**
+
+| Check | Result | Evidence / scope |
+| :--- | :---: | :--- |
+| Clean build & executable JAR | ✅ Passed | Java 17 compilation, tests and packaging |
+| Default test suite | ✅ **23 passed** | Domain, API, reporting, rollback and concurrency |
+| Embedded Kafka KRaft | ✅ Passed | Real consumed event, privacy checks and publication marker |
+| HTTP health, OpenAPI & Swagger | ✅ Passed | Running embedded HTTP server |
+| Standalone lifecycle smoke | ✅ Passed | Seven operations and reporting on test-only H2, port 18080 |
+| Compose configuration | ✅ Parsed | Configuration structure, not container startup |
+| PostgreSQL integration | ⏸ **1 skipped** | Explicit opt-in attempt blocked by Docker access |
+| Full Compose / image build | ⛔ Blocked | Docker engine named-pipe permission denied |
 
 `docker compose config --quiet` passed. `docker compose up --build -d` could not start because access to the Docker engine named pipe was denied. Explicitly enabling the PostgreSQL/Testcontainers test also failed because no usable Docker environment was available. **PostgreSQL runtime, container image build and publication to the Compose Kafka broker remain unverified.** A Compose configuration parse is not container startup validation. See `AI_WORKING_JOURNAL.md` for the full evidence and corrections.
 
@@ -158,4 +295,11 @@ The latest `mvnw.cmd clean verify` passed on Java **17.0.20.1** with **23 passin
 
 Confirm markets/currency rules; introduce authenticated authorization and ownership; verify PostgreSQL and Kafka end-to-end in CI; add consumer idempotency and transactional integration contracts. Evolve publisher to CDC or coordinated multi-instance polling with per-claim sequencing, backoff/dead-letter recovery, retention and backlog alerts. Measure query plans and consider materialized reporting only when necessary. Extract services only when deployment/team boundaries justify the complexity.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for diagrams/ADRs and [AI_WORKING_JOURNAL.md](AI_WORKING_JOURNAL.md) for the actual development/validation record. Git checkpoints reflect incremental work, not a synthetic single final commit.
+## Further reading
+
+| Document | Contents |
+| :--- | :--- |
+| [Architecture](ARCHITECTURE.md) | Domain boundaries, diagrams, consistency and ADR trade-offs |
+| [AI working journal](AI_WORKING_JOURNAL.md) | Actual prompts, challenged decisions, corrections and validation evidence |
+
+Git checkpoints reflect incremental implementation and verification.

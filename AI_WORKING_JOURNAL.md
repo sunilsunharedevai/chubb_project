@@ -57,3 +57,11 @@ Accepted: Within requested continuation/verification scope. No human manual chan
 Validation: Targeted KafkaIntegrationTest passed on Java 17: one executed, zero failures/errors. Broker uses KRaft on ephemeral local ports and is stopped by test teardown. Full clean verification is being run with this test included; final result will be appended before the checkpoint commit. Docker/Compose/PostgreSQL remain blocked, not falsely marked validated.
 
 Final result: `mvnw.cmd clean verify` passed on Java 17 with 24 discovered tests: 23 passed, one explicit PostgreSQL test skipped, zero failures/errors. Executable JAR repackaged successfully. README and architecture distinguish actual embedded broker delivery from unverified Compose broker configuration. Added a seventh logical checkpoint commit for Kafka verification; no production code changed in this continuation.
+
+## 8 — 2026-10-07: README presentation requested by user
+Prompt summary: Make the README more attractive with badges; current content looks like a wall of text.
+AI recommendation: Add a centered header, technology badges, explicitly labelled local-result badges, quick navigation/startup, capability/stack/validation tables, a lifecycle diagram and expandable reference sections.
+Accepted: User requested this presentation change; implementation retains setup commands, assumptions and known limitations. No manual human changes observed.
+Challenged: Do not imply a live CI badge or successful Docker/PostgreSQL validation. Local test counts remain 23 passed/one skipped, with blocked checks visible. An initial shell rewrite was blocked by execution policy; used explicit file patches instead. Failed patch attempts changed no files.
+Validation: Checked Markdown fence and details-tag balance, document links and Git whitespace diff. Documentation-only change; application tests were not rerun. Badges are static snapshots served by Shields.io, not live build automation.
+Result: README reorganized for GitHub-style rendering and recorded as a documentation checkpoint.
